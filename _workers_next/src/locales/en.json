@@ -595,10 +595,11 @@
             "titleLabel": "Title",
             "titlePlaceholder": "Enter a title",
             "bodyLabel": "Message",
-            "bodyPlaceholder": "Describe your issue or question...",
+            "bodyPlaceholder": "Describe your issue or question... (Unfriendly messages will be blocked.)",
             "send": "Send message",
             "sent": "Message sent",
-            "missing": "Title and message are required"
+            "missing": "Title and message are required",
+            "blocked": "You are blocked and cannot send messages"
         },
         "notifications": {
             "orderDeliveredTitle": "Order delivered",

@@ -31,6 +31,8 @@ async function repairTimestamps() {
         { table: 'user_notifications', cols: ['created_at'] },
         { table: 'user_messages', cols: ['created_at'] },
         { table: 'admin_messages', cols: ['created_at'] },
+        { table: 'broadcast_messages', cols: ['created_at'] },
+        { table: 'broadcast_reads', cols: ['created_at'] },
     ]
 
     for (const { table, cols } of timestampColumns) {

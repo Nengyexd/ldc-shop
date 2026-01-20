@@ -156,3 +156,20 @@ export const userMessages = sqliteTable('user_messages', {
     isRead: integer('is_read', { mode: 'boolean' }).default(false),
     createdAt: integer('created_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()),
 });
+
+// Broadcast messages (to all users)
+export const broadcastMessages = sqliteTable('broadcast_messages', {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    sender: text('sender'),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()),
+});
+
+// Broadcast read receipts (per user)
+export const broadcastReads = sqliteTable('broadcast_reads', {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    messageId: integer('message_id').notNull().references(() => broadcastMessages.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => loginUsers.userId, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()),
+});

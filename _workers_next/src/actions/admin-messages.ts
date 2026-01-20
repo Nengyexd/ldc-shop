@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { adminMessages, loginUsers, userNotifications } from "@/lib/db/schema"
+import { adminMessages, loginUsers, userNotifications, broadcastMessages } from "@/lib/db/schema"
 import { eq, sql } from "drizzle-orm"
 import { checkAdmin } from "@/actions/admin"
 import { revalidatePath } from "next/cache"
@@ -17,6 +17,26 @@ async function ensureAdminMessagesTable() {
             title TEXT NOT NULL,
             body TEXT NOT NULL,
             sender TEXT,
+            created_at INTEGER DEFAULT (unixepoch() * 1000)
+        )
+    `)
+}
+
+async function ensureBroadcastTables() {
+    await db.run(sql`
+        CREATE TABLE IF NOT EXISTS broadcast_messages(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL,
+            sender TEXT,
+            created_at INTEGER DEFAULT (unixepoch() * 1000)
+        )
+    `)
+    await db.run(sql`
+        CREATE TABLE IF NOT EXISTS broadcast_reads(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            message_id INTEGER NOT NULL REFERENCES broadcast_messages(id) ON DELETE CASCADE,
+            user_id TEXT NOT NULL REFERENCES login_users(user_id) ON DELETE CASCADE,
             created_at INTEGER DEFAULT (unixepoch() * 1000)
         )
     `)
@@ -68,7 +88,7 @@ export async function sendAdminMessage(params: {
 
     const payload = JSON.stringify({ title, body })
     const now = new Date()
-    const chunkSize = 80 // keep SQL variables under SQLite limit
+    const chunkSize = 40 // keep SQL variables well under D1 SQLite variable limit
     let sentCount = 0
 
     const insertChunk = async (ids: string[]) => {
@@ -90,22 +110,25 @@ export async function sendAdminMessage(params: {
     }
 
     if (targetType === "all") {
-        const pageSize = 500
-        let offset = 0
-        while (true) {
-            const rows = await db
-                .select({ id: loginUsers.userId })
-                .from(loginUsers)
-                .limit(pageSize)
-                .offset(offset)
-            const ids = rows.map((r) => r.id).filter(Boolean)
-            if (ids.length === 0) break
-            await insertChunk(ids)
-            offset += pageSize
-        }
-        if (sentCount === 0) {
-            return { success: false, error: "admin.messages.userNotFound" }
-        }
+        await ensureBroadcastTables()
+        await db.insert(broadcastMessages).values({
+            title,
+            body,
+            sender,
+            createdAt: now
+        })
+        const totalRow = await db.select({ count: sql<number>`count(*)` }).from(loginUsers)
+        const totalUsers = Number(totalRow[0]?.count || 0)
+        await db.insert(adminMessages).values({
+            targetType,
+            targetValue: null,
+            title,
+            body,
+            sender,
+            createdAt: now
+        })
+        revalidatePath("/admin/messages")
+        return { success: true, count: totalUsers }
     } else if (targetType === "username") {
         const username = targetValue.toLowerCase()
         const rows = await db
@@ -133,7 +156,7 @@ export async function sendAdminMessage(params: {
 
     await db.insert(adminMessages).values({
         targetType,
-        targetValue: targetType === "all" ? null : targetValue,
+        targetValue,
         title,
         body,
         sender,

@@ -595,10 +595,11 @@
             "titleLabel": "标题",
             "titlePlaceholder": "请输入标题",
             "bodyLabel": "内容",
-            "bodyPlaceholder": "描述你的问题或需求...",
+            "bodyPlaceholder": "描述你的问题或需求...（发送不友善消息将会被拉黑）",
             "send": "发送消息",
             "sent": "消息已发送",
-            "missing": "标题和内容不能为空"
+            "missing": "标题和内容不能为空",
+            "blocked": "您已被拉黑，无法发送消息"
         },
         "notifications": {
             "orderDeliveredTitle": "订单已发货",

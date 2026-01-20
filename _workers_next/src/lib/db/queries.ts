@@ -5,7 +5,7 @@ import { revalidateTag } from "next/cache";
 
 // Database initialization state
 let dbInitialized = false;
-const CURRENT_SCHEMA_VERSION = 4;
+const CURRENT_SCHEMA_VERSION = 6;
 
 async function safeAddColumn(table: string, column: string, definition: string) {
     try {
@@ -36,6 +36,9 @@ async function ensureIndexes() {
         `CREATE INDEX IF NOT EXISTS admin_messages_created_idx ON admin_messages(created_at)`,
         `CREATE INDEX IF NOT EXISTS user_messages_read_created_idx ON user_messages(is_read, created_at)`,
         `CREATE INDEX IF NOT EXISTS user_messages_user_created_idx ON user_messages(user_id, created_at)`,
+        `CREATE INDEX IF NOT EXISTS broadcast_messages_created_idx ON broadcast_messages(created_at)`,
+        `CREATE INDEX IF NOT EXISTS broadcast_reads_message_user_idx ON broadcast_reads(message_id, user_id)`,
+        `CREATE INDEX IF NOT EXISTS broadcast_reads_user_idx ON broadcast_reads(user_id, created_at)`,
     ];
 
     for (const statement of indexStatements) {
@@ -79,6 +82,7 @@ async function ensureDatabaseInitialized() {
         await ensureUserNotificationsTable();
         await ensureAdminMessagesTable();
         await ensureUserMessagesTable();
+        await ensureBroadcastTables();
         await migrateTimestampColumnsToMs();
         await ensureIndexes();
         await backfillProductAggregates();
@@ -242,6 +246,23 @@ async function ensureDatabaseInitialized() {
             title TEXT NOT NULL,
             body TEXT NOT NULL,
             is_read INTEGER DEFAULT 0,
+            created_at INTEGER DEFAULT (unixepoch() * 1000)
+        );
+
+        -- Broadcast messages
+        CREATE TABLE IF NOT EXISTS broadcast_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL,
+            sender TEXT,
+            created_at INTEGER DEFAULT (unixepoch() * 1000)
+        );
+
+        -- Broadcast read receipts
+        CREATE TABLE IF NOT EXISTS broadcast_reads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            message_id INTEGER NOT NULL REFERENCES broadcast_messages(id) ON DELETE CASCADE,
+            user_id TEXT NOT NULL REFERENCES login_users(user_id) ON DELETE CASCADE,
             created_at INTEGER DEFAULT (unixepoch() * 1000)
         );
     `);
@@ -1011,6 +1032,8 @@ async function migrateTimestampColumnsToMs() {
         { table: 'user_notifications', columns: ['created_at'] },
         { table: 'admin_messages', columns: ['created_at'] },
         { table: 'user_messages', columns: ['created_at'] },
+        { table: 'broadcast_messages', columns: ['created_at'] },
+        { table: 'broadcast_reads', columns: ['created_at'] },
     ];
 
     for (const { table, columns } of tableColumns) {
@@ -1090,6 +1113,24 @@ async function ensureUserMessagesTable() {
             is_read INTEGER DEFAULT 0,
             created_at INTEGER DEFAULT (unixepoch() * 1000)
         )
+    `);
+}
+
+async function ensureBroadcastTables() {
+    await db.run(sql`
+        CREATE TABLE IF NOT EXISTS broadcast_messages(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL,
+            sender TEXT,
+            created_at INTEGER DEFAULT (unixepoch() * 1000)
+        );
+        CREATE TABLE IF NOT EXISTS broadcast_reads(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            message_id INTEGER NOT NULL REFERENCES broadcast_messages(id) ON DELETE CASCADE,
+            user_id TEXT NOT NULL REFERENCES login_users(user_id) ON DELETE CASCADE,
+            created_at INTEGER DEFAULT (unixepoch() * 1000)
+        );
     `);
 }
 

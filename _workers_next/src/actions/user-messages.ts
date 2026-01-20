@@ -29,6 +29,18 @@ export async function sendUserMessage(title: string, body: string) {
         return { success: false, error: "Unauthorized" }
     }
 
+    try {
+        const rows = await db.select({ isBlocked: loginUsers.isBlocked })
+            .from(loginUsers)
+            .where(eq(loginUsers.userId, userId))
+            .limit(1)
+        if (rows[0]?.isBlocked) {
+            return { success: false, error: "profile.messages.blocked" }
+        }
+    } catch {
+        // ignore if table/column not available yet
+    }
+
     const cleanTitle = (title || '').trim()
     const cleanBody = (body || '').trim()
     if (!cleanTitle || !cleanBody) {
