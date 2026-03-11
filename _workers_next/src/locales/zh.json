@@ -170,6 +170,7 @@
         "requestButton": "提交申请",
         "requested": "已提交退款申请",
         "requestStatus": "当前状态：{{status}}",
+        "adminNote": "管理员备注：",
         "statusValues": {
             "pending": "待处理",
             "approved": "已同意",

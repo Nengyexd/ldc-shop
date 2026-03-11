@@ -60,7 +60,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
             }}
             canViewKey={canViewKey}
             isOwner={isOwner}
-            refundRequest={refundRequest ? { status: refundRequest.status, reason: refundRequest.reason } : null}
+            refundRequest={refundRequest ? { status: refundRequest.status, reason: refundRequest.reason, adminNote: refundRequest.adminNote } : null}
         />
     )
 }

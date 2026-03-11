@@ -35,7 +35,7 @@ interface OrderContentProps {
     order: Order
     canViewKey: boolean
     isOwner: boolean
-    refundRequest: { status: string | null; reason: string | null } | null
+    refundRequest: { status: string | null; reason: string | null; adminNote?: string | null } | null
 }
 
 export function OrderContent({ order, canViewKey, isOwner, refundRequest }: OrderContentProps) {
@@ -354,8 +354,15 @@ export function OrderContent({ order, canViewKey, isOwner, refundRequest }: Orde
                             <div className="space-y-3">
                                 <h3 className="font-semibold">{t('refund.requestTitle')}</h3>
                                 {refundRequest?.status ? (
-                                    <div className="text-sm text-muted-foreground">
-                                        {t('refund.requestStatus', { status: t(`refund.statusValues.${refundRequest.status}`) })}
+                                    <div className="space-y-1">
+                                        <div className="text-sm text-muted-foreground">
+                                            {t('refund.requestStatus', { status: t(`refund.statusValues.${refundRequest.status}`) })}
+                                        </div>
+                                        {refundRequest.adminNote && (
+                                            <div className="text-sm text-muted-foreground">
+                                                {t('refund.adminNote')}{refundRequest.adminNote}
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="text-sm text-muted-foreground">

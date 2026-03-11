@@ -170,6 +170,7 @@
         "requestButton": "Request refund",
         "requested": "Refund request submitted",
         "requestStatus": "Current status: {{status}}",
+        "adminNote": "Admin note: ",
         "statusValues": {
             "pending": "Pending",
             "approved": "Approved",
